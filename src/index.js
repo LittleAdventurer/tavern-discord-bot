@@ -1,6 +1,6 @@
 import { Client, Collection, GatewayIntentBits } from 'discord.js';
 import { config } from 'dotenv';
-import { fileURLToPath } from 'url';
+import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import { readdirSync } from 'fs';
 
@@ -26,7 +26,7 @@ async function loadCommands() {
 
   for (const file of commandFiles) {
     const filePath = join(commandsPath, file);
-    const command = await import(filePath);
+    const command = await import(pathToFileURL(filePath).href);
 
     if ('data' in command && 'execute' in command) {
       client.commands.set(command.data.name, command);
@@ -43,7 +43,7 @@ async function loadEvents() {
 
   for (const file of eventFiles) {
     const filePath = join(eventsPath, file);
-    const event = await import(filePath);
+    const event = await import(pathToFileURL(filePath).href);
 
     if (event.once) {
       client.once(event.name, (...args) => event.execute(...args));
