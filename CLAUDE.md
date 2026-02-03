@@ -59,6 +59,131 @@ Each event exports:
 - `once`: Optional boolean for one-time events
 - `execute(...args)`: Handler function
 
+## Command Reference
+
+### Economy Commands
+
+| Command | Description | Options | Example |
+|---------|-------------|---------|---------|
+| `/지갑` | Check current balance | None | `/지갑` |
+| `/출석` | Daily check-in (+5,000 points) | None | `/출석` |
+| `/송금` | Transfer points to another user | `대상` (user), `금액` (amount) | `/송금 @user 1000` |
+
+### Gambling Commands
+
+| Command | Description | Options | Example |
+|---------|-------------|---------|---------|
+| `/도박` | Dice gambling (1-100) | `금액` (amount, 0=all-in) | `/도박 1000` |
+| `/가위바위보` | Rock-paper-scissors | `선택` (choice), `금액` (amount) | `/가위바위보 가위 500` |
+
+### Fun Commands
+
+| Command | Description | Options | Example |
+|---------|-------------|---------|---------|
+| `/메뉴추천` | Random food recommendation | `카테고리` (optional) | `/메뉴추천 한식` |
+| `/팀짜기` | Split voice channel into 2 teams | None | `/팀짜기` |
+| `/ping` | Check bot latency | None | `/ping` |
+
+### Game Stats Commands
+
+| Command | Description | Options | Example |
+|---------|-------------|---------|---------|
+| `/전적` | Game stats lookup links | `게임` (game), `닉네임` (nickname) | `/전적 lol Hide on bush` |
+
+Supported games: LoL, Valorant, Overwatch, PUBG, MapleStory
+
+### Ranking Commands
+
+| Command | Description | Options | Example |
+|---------|-------------|---------|---------|
+| `/랭킹` | View top 10 leaderboard | `종류` (chat/voice) | `/랭킹 채팅` |
+
+### Content Storage Commands (Blackmail System)
+
+| Command | Description | Options | Example |
+|---------|-------------|---------|---------|
+| `/저장` | Save content with keyword | `키워드`, `내용`, `이름` (optional) | `/저장 실수 "embarrassing moment" 홍길동` |
+| `/불러오기` | Search by keyword | `키워드` | `/불러오기 실수` |
+| `/나락` | Random content by person name | `이름` | `/나락 홍길동` |
+
+## Database Function Reference
+
+### User Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `getUser(userId)` | `userId: string` | `User object` | Get or create user |
+| `updateBalance(userId, amount)` | `userId: string, amount: number` | `new balance: number` | Add/subtract balance |
+| `setBalance(userId, amount)` | `userId: string, amount: number` | `void` | Set exact balance |
+| `checkDaily(userId)` | `userId: string` | `{ success, message?, newBalance? }` | Daily attendance |
+| `incrementChatCount(userId)` | `userId: string` | `void` | Increment message count |
+| `addVoiceTime(userId, seconds)` | `userId: string, seconds: number` | `void` | Add voice duration |
+| `getRanking(type, limit)` | `type: 'chat'\|'voice', limit: number` | `Array<{user_id, value}>` | Get leaderboard |
+
+### Meme/Content Functions
+
+| Function | Parameters | Returns | Description |
+|----------|------------|---------|-------------|
+| `saveMeme(keyword, content, createdBy, name)` | `keyword, content, createdBy: string, name?: string` | `void` | Save content |
+| `getMeme(keyword)` | `keyword: string` | `Array<Meme>` | Search by keyword |
+| `getMemesByName(name)` | `name: string` | `Array<Meme>` | Search by person name |
+| `getRandomMemeByName(name)` | `name: string` | `Meme \| null` | Random content for person |
+
+### User Object Schema
+```javascript
+{
+  user_id: string,      // Discord user ID
+  balance: number,      // Point balance (default: 1000)
+  chat_count: number,   // Message count
+  voice_time: number,   // Voice duration in seconds
+  daily_check: string   // Last check date (YYYY-MM-DD)
+}
+```
+
+### Meme Object Schema
+```javascript
+{
+  id: number,           // Auto-increment ID
+  keyword: string,      // Search keyword
+  name: string | null,  // Associated person name
+  content: string,      // Stored content
+  created_by: string,   // Creator's user ID
+  created_at: string    // ISO timestamp
+}
+```
+
+## Gambling Mechanics
+
+### Dice Gambling (`/도박`)
+
+| Roll | Result | Multiplier | Net Gain |
+|------|--------|------------|----------|
+| 1-50 | Lose | 0x | -bet |
+| 51-99 | Win | 2x | +bet |
+| 100 | Jackpot | 5x | +4x bet |
+
+- **Win rate**: 50% (rolls 51-100)
+- **Expected value**: Slightly negative (house edge)
+- **All-in**: Enter `0` as amount to bet entire balance
+
+### Rock-Paper-Scissors (`/가위바위보`)
+
+| Result | Multiplier | Net Change |
+|--------|------------|------------|
+| Win | 3x | +2x bet |
+| Draw | 1x | ±0 (refund) |
+| Lose | 0x | -bet |
+
+- **Win rate**: 33.3%
+- **Draw rate**: 33.3%
+- **Lose rate**: 33.3%
+- **Expected value**: Neutral (no house edge)
+
+### Balance Validation
+- Cannot bet more than current balance
+- Cannot bet with zero balance
+- Minimum bet: 1 point (except all-in)
+
 ## Code Conventions
 
 ### Command Structure Template
@@ -101,6 +226,8 @@ export async function execute(arg1, arg2) {
 | Warning | `0x95A5A6` (Gray) |
 | Gold/Money | `0xF1C40F` (Yellow) |
 | Special | `0xE67E22` (Orange) |
+| Blackmail | `0xE91E63` (Pink) |
+| Team | `0x9B59B6` (Purple) |
 
 ### Naming Conventions
 - **Command names**: Korean (e.g., `지갑`, `송금`, `출석`)
@@ -113,6 +240,53 @@ export async function execute(arg1, arg2) {
 - Use ephemeral messages for errors: `{ content: 'error', ephemeral: true }`
 - Validate user input before database operations
 - Check for edge cases (self-transfer, bot users, insufficient balance)
+
+## Security Considerations
+
+### Input Validation
+- All user inputs are validated before database operations
+- Integer options use `setMinValue()` to prevent negative amounts
+- String inputs are used directly with prepared statements (SQL injection safe)
+
+### Protected Operations
+- **Self-transfer blocked**: Users cannot send points to themselves
+- **Bot transfer blocked**: Users cannot send points to bots
+- **Balance checks**: All transactions verify sufficient balance first
+
+### Database Security
+- Uses prepared statements (parameterized queries) - no SQL injection risk
+- SQLite file stored in `data/` directory (gitignored)
+- No sensitive data stored (only Discord user IDs)
+
+### Rate Limiting
+- Message tracking has 3-second cooldown per user
+- Prevents spam farming of chat count
+
+### Recommendations for New Features
+1. Always validate user input before database operations
+2. Use ephemeral messages for error responses (private to user)
+3. Check `interaction.user.bot` to prevent bot interactions
+4. Use prepared statements for any new database queries
+5. Sanitize any content displayed in embeds (truncate long strings)
+
+## Known Limitations
+
+### Voice Tracking
+- **Data loss on restart**: Voice join times stored in-memory Map
+- If bot restarts while users are in voice channels, their current session is lost
+- Only records time when user leaves the channel
+
+**Potential improvement**: Persist join times to database or implement periodic checkpoints.
+
+### Content Storage
+- No pagination for large search results (shows max 5)
+- No delete functionality for saved content
+- No edit functionality for saved content
+
+### Economy System
+- No maximum balance cap
+- No transaction history/logs
+- No anti-cheat for rapid gambling
 
 ## Database Schema
 
@@ -133,6 +307,10 @@ name TEXT                    -- Associated person name
 content TEXT NOT NULL        -- Stored content
 created_by TEXT NOT NULL     -- Creator's user ID
 created_at TEXT              -- Timestamp
+
+-- Indexes for search performance
+CREATE INDEX idx_memes_keyword ON memes(keyword);
+CREATE INDEX idx_memes_name ON memes(name);
 ```
 
 ## Development Workflow
@@ -180,21 +358,49 @@ Push to `main` branch triggers GitHub Actions:
 
 Required GitHub Secrets: `GCE_HOST`, `GCE_USERNAME`, `GCE_SSH_KEY`
 
-## Important Implementation Details
+## Troubleshooting
 
-### Rate Limiting
-- Message tracking: 3-second cooldown per user (in-memory Map)
-- Voice tracking: Join times stored in-memory (lost on restart)
+### Common Errors
 
-### Gambling System
-- Dice (`/도박`): Roll 1-100, 51+ wins 2x, 100 = 5x jackpot
-- RPS (`/가위바위보`): Win = 3x, Draw = refund, Lose = forfeit
-- Amount 0 = all-in bet
+| Error | Cause | Solution |
+|-------|-------|----------|
+| `DISCORD_TOKEN is not defined` | Missing .env file | Copy `.env.example` to `.env` and add token |
+| `Missing Access` | Bot lacks permissions | Check bot role permissions in Discord server |
+| `Unknown interaction` | Command not registered | Run `npm run deploy` |
+| `SQLITE_CANTOPEN` | Missing data directory | Create `data/` folder: `mkdir data` |
+| `Cannot find module` | Missing dependencies | Run `npm install` |
+| `Used disallowed intents` | Intents not enabled | Enable intents in Discord Developer Portal |
 
-### Rankings
-- Chat: Incremented per message (with cooldown)
-- Voice: Tracked in seconds, displayed as hours:minutes
-- Top 10 with medal emojis (🥇🥈🥉)
+### Discord Developer Portal Setup
+1. Go to [Discord Developer Portal](https://discord.com/developers/applications)
+2. Select your application → Bot
+3. Enable these Privileged Gateway Intents:
+   - Message Content Intent
+   - Server Members Intent (if needed)
+
+### Command Not Showing
+1. Verify command file exports `data` and `execute`
+2. Run `npm run deploy`
+3. Wait up to 1 hour for global commands (instant for guild commands)
+4. Check console for deployment errors
+
+### Database Issues
+```bash
+# View database contents
+sqlite3 data/bot.db "SELECT * FROM users LIMIT 10;"
+
+# Reset database (caution: deletes all data)
+rm data/bot.db
+# Restart bot to recreate tables
+```
+
+### PM2 Commands (Production)
+```bash
+pm2 status              # Check bot status
+pm2 logs discord-bot    # View logs
+pm2 restart discord-bot # Restart bot
+pm2 stop discord-bot    # Stop bot
+```
 
 ## Common Tasks
 
