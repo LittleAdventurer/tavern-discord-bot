@@ -124,4 +124,24 @@ export function deleteMeme(id, userId) {
   return { success: true, meme };
 }
 
+// 밈 수정
+export function editMeme(id, userId, newContent, newKeyword = null, newName = undefined) {
+  const meme = getMemeById(id);
+  if (!meme) {
+    return { success: false, message: '해당 ID의 저장된 내용이 없습니다.' };
+  }
+  if (meme.created_by !== userId) {
+    return { success: false, message: '본인이 저장한 내용만 수정할 수 있습니다.' };
+  }
+
+  const updatedContent = newContent || meme.content;
+  const updatedKeyword = newKeyword || meme.keyword;
+  const updatedName = newName === undefined ? meme.name : newName;
+
+  db.prepare('UPDATE memes SET content = ?, keyword = ?, name = ? WHERE id = ?')
+    .run(updatedContent, updatedKeyword, updatedName, id);
+
+  return { success: true, oldMeme: meme, newMeme: getMemeById(id) };
+}
+
 export default db;
