@@ -50,12 +50,12 @@ const TIER_COLORS = {
 /**
  * Make a request to the Riot API
  * @param {string} url - Full API URL
- * @returns {Promise<object|null>} - API response or null on error
+ * @returns {Promise<{success: boolean, data?: object, error?: string, status?: number}>} - API response with error info
  */
 async function riotApiRequest(url) {
   if (!RIOT_API_KEY) {
     console.error('[LoL API] RIOT_API_KEY가 설정되지 않았습니다.');
-    return null;
+    return { success: false, error: 'API_KEY_MISSING' };
   }
 
   try {
@@ -66,28 +66,29 @@ async function riotApiRequest(url) {
     });
 
     if (response.status === 404) {
-      return null;
+      return { success: false, error: 'NOT_FOUND', status: 404 };
     }
 
     if (response.status === 403) {
       console.error('[LoL API] API 키가 만료되었거나 유효하지 않습니다.');
-      return null;
+      return { success: false, error: 'API_KEY_INVALID', status: 403 };
     }
 
     if (response.status === 429) {
       console.error('[LoL API] API 요청 한도 초과');
-      return null;
+      return { success: false, error: 'RATE_LIMIT', status: 429 };
     }
 
     if (!response.ok) {
       console.error(`[LoL API] API 오류: ${response.status}`);
-      return null;
+      return { success: false, error: 'API_ERROR', status: response.status };
     }
 
-    return await response.json();
+    const data = await response.json();
+    return { success: true, data };
   } catch (error) {
     console.error('[LoL API] 요청 실패:', error.message);
-    return null;
+    return { success: false, error: 'NETWORK_ERROR', message: error.message };
   }
 }
 
@@ -110,11 +111,12 @@ function parseRiotId(input) {
  * @param {string} gameName - Game name
  * @param {string} tagLine - Tag line
  * @param {string} region - Region (default: kr)
- * @returns {Promise<object|null>} - Account data or null
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>} - Account data or error
  */
 async function getAccountByRiotId(gameName, tagLine, region = 'kr') {
   const regionalUrl = REGIONS[region]?.regional || REGIONS.kr.regional;
   const url = `https://${regionalUrl}/riot/account/v1/accounts/by-riot-id/${encodeURIComponent(gameName)}/${encodeURIComponent(tagLine)}`;
+  console.log(`[LoL API] 계정 조회: ${gameName}#${tagLine}`);
   return await riotApiRequest(url);
 }
 
@@ -122,7 +124,7 @@ async function getAccountByRiotId(gameName, tagLine, region = 'kr') {
  * Get summoner info by PUUID
  * @param {string} puuid - Player Universal Unique ID
  * @param {string} region - Region (default: kr)
- * @returns {Promise<object|null>} - Summoner data or null
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>} - Summoner data or error
  */
 async function getSummonerByPuuid(puuid, region = 'kr') {
   const platformUrl = REGIONS[region]?.platform || REGIONS.kr.platform;
@@ -134,12 +136,31 @@ async function getSummonerByPuuid(puuid, region = 'kr') {
  * Get ranked stats by summoner ID
  * @param {string} summonerId - Encrypted summoner ID
  * @param {string} region - Region (default: kr)
- * @returns {Promise<Array|null>} - Array of ranked entries or null
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>} - Array of ranked entries or error
  */
 async function getRankedStats(summonerId, region = 'kr') {
   const platformUrl = REGIONS[region]?.platform || REGIONS.kr.platform;
   const url = `https://${platformUrl}/lol/league/v4/entries/by-summoner/${summonerId}`;
   return await riotApiRequest(url);
+}
+
+/**
+ * Get error message based on error type
+ * @param {string} error - Error type
+ * @param {string} gameName - Game name for context
+ * @param {string} tagLine - Tag line for context
+ * @returns {string} - Localized error message
+ */
+function getErrorMessage(error, gameName, tagLine) {
+  const messages = {
+    'API_KEY_MISSING': 'Riot API 키가 설정되지 않았습니다.',
+    'API_KEY_INVALID': 'Riot API 키가 만료되었거나 유효하지 않습니다. 관리자에게 문의하세요.',
+    'RATE_LIMIT': 'API 요청 한도를 초과했습니다. 잠시 후 다시 시도해주세요.',
+    'NETWORK_ERROR': '네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+    'NOT_FOUND': `소환사 "${gameName}#${tagLine}"을(를) 찾을 수 없습니다.\n태그가 정확한지 확인해주세요. (예: KR1, KR2 등)`,
+    'API_ERROR': 'API 오류가 발생했습니다. 잠시 후 다시 시도해주세요.'
+  };
+  return messages[error] || '알 수 없는 오류가 발생했습니다.';
 }
 
 /**
@@ -160,29 +181,37 @@ export async function getPlayerStats(riotIdInput, region = 'kr') {
 
   // Parse Riot ID
   const { gameName, tagLine } = parseRiotId(riotIdInput);
+  console.log(`[LoL API] 검색 요청: "${gameName}#${tagLine}"`);
 
   // Step 1: Get account info
-  const account = await getAccountByRiotId(gameName, tagLine, region);
-  if (!account) {
+  const accountResult = await getAccountByRiotId(gameName, tagLine, region);
+  if (!accountResult.success) {
+    console.log(`[LoL API] 계정 조회 실패: ${accountResult.error}`);
     return {
       success: false,
-      error: 'ACCOUNT_NOT_FOUND',
-      message: `소환사 "${gameName}#${tagLine}"을(를) 찾을 수 없습니다.`
+      error: accountResult.error,
+      message: getErrorMessage(accountResult.error, gameName, tagLine)
     };
   }
+  const account = accountResult.data;
 
   // Step 2: Get summoner info
-  const summoner = await getSummonerByPuuid(account.puuid, region);
-  if (!summoner) {
+  const summonerResult = await getSummonerByPuuid(account.puuid, region);
+  if (!summonerResult.success) {
+    console.log(`[LoL API] 소환사 조회 실패: ${summonerResult.error}`);
     return {
       success: false,
-      error: 'SUMMONER_NOT_FOUND',
-      message: '소환사 정보를 가져올 수 없습니다.'
+      error: summonerResult.error,
+      message: summonerResult.error === 'NOT_FOUND'
+        ? '이 계정은 롤을 플레이한 적이 없습니다.'
+        : getErrorMessage(summonerResult.error, gameName, tagLine)
     };
   }
+  const summoner = summonerResult.data;
 
   // Step 3: Get ranked stats
-  const rankedData = await getRankedStats(summoner.id, region);
+  const rankedResult = await getRankedStats(summoner.id, region);
+  const rankedData = rankedResult.success ? rankedResult.data : [];
 
   // Process ranked data
   const rankedStats = {};
