@@ -8,7 +8,7 @@ This file provides guidance for AI assistants working with the Tavern Discord Bo
 
 ## TODO
 
-- [ ] Implement LoL API and update `/전적` command
+- [x] Implement LoL API and update `/전적` command
 
 ## Technology Stack
 
@@ -29,6 +29,8 @@ tavern-discord-bot/
 │   ├── events/             # Discord event handlers
 │   ├── database/
 │   │   └── db.js           # SQLite abstraction layer
+│   ├── services/
+│   │   └── lolApi.js       # Riot Games API integration
 │   ├── index.js            # Bot entry point
 │   └── deploy-commands.js  # Command registration script
 ├── data/
@@ -63,6 +65,12 @@ Each event exports:
 - `once`: Optional boolean for one-time events
 - `execute(...args)`: Handler function
 
+### LoL API Service: `src/services/lolApi.js`
+- Integrates with Riot Games API for League of Legends stats
+- Uses Account-v1, Summoner-v4, and League-v4 endpoints
+- Supports Riot ID format (name#tag)
+- Gracefully falls back to link-based response if API key is not configured
+
 ## Command Reference
 
 ### Economy Commands
@@ -92,9 +100,18 @@ Each event exports:
 
 | Command | Description | Options | Example |
 |---------|-------------|---------|---------|
-| `/전적` | Game stats lookup links | `게임` (game), `닉네임` (nickname) | `/전적 lol Hide on bush` |
+| `/전적` | Game stats lookup (LoL: API, others: links) | `게임` (game), `닉네임` (nickname#tag for LoL) | `/전적 lol Hide on bush#KR1` |
 
-Supported games: LoL, Valorant, Overwatch, PUBG, MapleStory
+Supported games: LoL (with Riot API), Valorant, Overwatch, PUBG, MapleStory
+
+#### LoL Stats (Riot API Integration)
+When `RIOT_API_KEY` is configured, the `/전적` command for LoL shows:
+- Summoner level and profile icon
+- Solo/Duo rank with LP and win rate
+- Flex rank with LP and win rate
+- Tier-colored embed based on rank
+
+**Riot ID Format**: `닉네임#태그` (e.g., `Hide on bush#KR1`). If no tag is provided, defaults to `#KR1`.
 
 ### Ranking Commands
 
@@ -353,7 +370,14 @@ npm run dev              # Auto-restart on file changes
 DISCORD_TOKEN=           # Bot token from Discord Developer Portal
 CLIENT_ID=               # Application ID
 GUILD_ID=                # Optional: for guild-only command deployment
+RIOT_API_KEY=            # Optional: Riot Games API key for LoL stats
 ```
+
+### Getting a Riot API Key
+1. Go to [Riot Developer Portal](https://developer.riotgames.com)
+2. Sign in with your Riot account
+3. Register a new application or use development API key
+4. Add the key to your `.env` file
 
 ## CI/CD Deployment
 
