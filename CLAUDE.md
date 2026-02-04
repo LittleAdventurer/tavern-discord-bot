@@ -70,6 +70,39 @@ Each event exports:
 - Uses Account-v1, Summoner-v4, and League-v4 endpoints
 - Supports Riot ID format (name#tag)
 - Gracefully falls back to link-based response if API key is not configured
+## Bot Status (Rotating Status Messages)
+
+The bot displays rotating status messages with a "tavern receptionist" (여관 접수원) concept, changing every 10 minutes to make the bot appear more alive.
+
+### Status Message Configuration
+
+Located in `src/events/ready.js`:
+
+| Mode | ActivityType | Messages |
+|------|--------------|----------|
+| 기본 업무 (Work) | Playing | "꼬마용사 여관 관리 중", "밀린 숙박비 계산 중", "객실 청소 중" |
+| 대기 (Standby) | Watching | "빈 방이 있나 확인 중", "수상한 몬스터 감시 중" |
+| 서비스 (Service) | Listening | "용사님들의 주문 듣는 중", "모험 이야기 경청 중" |
+
+### Configuration Constants
+
+```javascript
+const STATUS_INTERVAL = 10 * 60 * 1000;  // Rotation interval (10 minutes)
+```
+
+### Adding New Status Messages
+
+To add new status messages, edit the `statusMessages` array in `src/events/ready.js`:
+
+```javascript
+const statusMessages = [
+  { type: ActivityType.Playing, message: '새로운 메시지' },
+  { type: ActivityType.Watching, message: '새로운 메시지' },
+  { type: ActivityType.Listening, message: '새로운 메시지' },
+];
+```
+
+Available ActivityTypes: `Playing`, `Watching`, `Listening`, `Competing`
 
 ## Command Reference
 
