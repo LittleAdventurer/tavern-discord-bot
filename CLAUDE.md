@@ -21,7 +21,7 @@ This file provides guidance for AI assistants working with the Tavern Discord Bo
 ```
 tavern-discord-bot/
 ├── src/
-│   ├── commands/           # Slash commands (13 files)
+│   ├── commands/           # Slash commands (15 files)
 │   ├── events/             # Discord event handlers
 │   ├── database/
 │   │   └── db.js           # SQLite abstraction layer
@@ -105,6 +105,8 @@ Supported games: LoL, Valorant, Overwatch, PUBG, MapleStory
 | `/저장` | Save content with keyword | `키워드`, `내용`, `이름` (optional) | `/저장 실수 "embarrassing moment" 홍길동` |
 | `/불러오기` | Search by keyword | `키워드` | `/불러오기 실수` |
 | `/나락` | Random content by person name | `이름` | `/나락 홍길동` |
+| `/삭제` | Delete saved content (owner only) | `id` | `/삭제 42` |
+| `/수정` | Edit saved content (owner only) | `id`, `내용` (optional), `키워드` (optional), `이름` (optional) | `/수정 42 내용:"new content"` |
 
 ## Database Function Reference
 
@@ -128,6 +130,9 @@ Supported games: LoL, Valorant, Overwatch, PUBG, MapleStory
 | `getMeme(keyword)` | `keyword: string` | `Array<Meme>` | Search by keyword |
 | `getMemesByName(name)` | `name: string` | `Array<Meme>` | Search by person name |
 | `getRandomMemeByName(name)` | `name: string` | `Meme \| null` | Random content for person |
+| `getMemeById(id)` | `id: number` | `Meme \| undefined` | Get content by ID |
+| `deleteMeme(id, userId)` | `id: number, userId: string` | `{ success, message?, meme? }` | Delete content (owner only) |
+| `editMeme(id, userId, newContent, newKeyword, newName)` | `id: number, userId: string, ...` | `{ success, message?, oldMeme?, newMeme? }` | Edit content (owner only) |
 
 ### User Object Schema
 ```javascript
@@ -280,8 +285,6 @@ export async function execute(arg1, arg2) {
 
 ### Content Storage
 - No pagination for large search results (shows max 5)
-- No delete functionality for saved content
-- No edit functionality for saved content
 
 ### Economy System
 - No maximum balance cap
