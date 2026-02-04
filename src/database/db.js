@@ -106,4 +106,22 @@ export function getRandomMemeByName(name) {
   return memes[Math.floor(Math.random() * memes.length)];
 }
 
+// 밈 조회 (ID로)
+export function getMemeById(id) {
+  return db.prepare('SELECT * FROM memes WHERE id = ?').get(id);
+}
+
+// 밈 삭제
+export function deleteMeme(id, userId) {
+  const meme = getMemeById(id);
+  if (!meme) {
+    return { success: false, message: '해당 ID의 저장된 내용이 없습니다.' };
+  }
+  if (meme.created_by !== userId) {
+    return { success: false, message: '본인이 저장한 내용만 삭제할 수 있습니다.' };
+  }
+  db.prepare('DELETE FROM memes WHERE id = ?').run(id);
+  return { success: true, meme };
+}
+
 export default db;

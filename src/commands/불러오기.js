@@ -30,9 +30,9 @@ export async function execute(interaction) {
     .setDescription(`${memes.length}개의 결과를 찾았습니다.`)
     .setTimestamp();
 
-  memes.slice(0, 5).forEach((meme, index) => {
+  memes.slice(0, 5).forEach((meme) => {
     embed.addFields({
-      name: `#${index + 1}${meme.name ? ` (${meme.name})` : ''}`,
+      name: `ID: ${meme.id}${meme.name ? ` (${meme.name})` : ''}`,
       value: meme.content.length > 200 ? meme.content.slice(0, 200) + '...' : meme.content,
       inline: false
     });

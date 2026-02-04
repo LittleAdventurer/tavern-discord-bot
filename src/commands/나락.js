@@ -27,7 +27,10 @@ export async function execute(interaction) {
     .setColor(0xE91E63)
     .setTitle(`😈 ${name}의 흑역사`)
     .setDescription(meme.content)
-    .addFields({ name: '키워드', value: meme.keyword, inline: true })
+    .addFields(
+      { name: 'ID', value: String(meme.id), inline: true },
+      { name: '키워드', value: meme.keyword, inline: true }
+    )
     .setFooter({ text: `저장일: ${new Date(meme.created_at).toLocaleDateString('ko-KR')}` })
     .setTimestamp();
 
