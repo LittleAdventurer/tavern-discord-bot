@@ -57,13 +57,13 @@ export async function execute(interaction) {
     const multiplier = STEW_MULTIPLIERS[itemId];
     const existingBuff = getBuff(userId, BUFF_TYPES.DAILY_BOOST);
 
-    // 기존 버프보다 낮은 배수면 거부
-    if (existingBuff && existingBuff.multiplier > multiplier) {
+    // 이미 스튜 효과가 활성화되어 있으면 거부
+    if (existingBuff) {
       return await interaction.reply({
         embeds: [new EmbedBuilder()
           .setColor(0xE74C3C)
           .setTitle('❌ 사용 실패')
-          .setDescription(`이미 더 높은 배수의 스튜 효과가 활성화되어 있습니다.\n현재: ${existingBuff.multiplier}배 (${existingBuff.remainingDays}일 남음)`)],
+          .setDescription(`이미 스튜 효과가 활성화되어 있습니다.\n현재: ${existingBuff.multiplier}배 (${existingBuff.remainingDays}일 남음)\n\n기존 효과가 만료된 후 다시 시도하세요.`)],
         ephemeral: true
       });
     }
