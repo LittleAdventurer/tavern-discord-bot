@@ -11,6 +11,11 @@ const __dirname = dirname(__filename);
 export async function createWebServer(discordClient) {
   const app = express();
 
+  // 프록시 신뢰 설정 (Cloudflare Tunnel 사용 시 필요)
+  if (process.env.NODE_ENV === 'production') {
+    app.set('trust proxy', 1);
+  }
+
   // Session 설정
   app.use(session({
     secret: process.env.SESSION_SECRET || 'tavern-secret-key',
