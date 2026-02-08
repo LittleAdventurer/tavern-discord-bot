@@ -107,25 +107,25 @@ if (oldStew && oldStew.available === 1) {
   console.log('[Database] 기존 스튜 아이템 비활성화');
 }
 
-// 새로운 기간제 스튜 아이템 추가
+// 새로운 스튜 아이템 추가
 const newStewExists = db.prepare("SELECT COUNT(*) as count FROM shop_items WHERE name LIKE '%스튜%' AND id > 8").get().count;
 if (newStewExists === 0) {
   const insertItem = db.prepare('INSERT INTO shop_items (name, description, price, emoji, category, consumable) VALUES (?, ?, ?, ?, ?, ?)');
 
-  insertItem.run('여관 특제 스튜', '7일간 출석 보상이 1.25배가 됩니다.', 5000, '🍲', 'consumable', 1);
-  insertItem.run('여관 고급 스튜', '7일간 출석 보상이 1.5배가 됩니다.', 12000, '🥘', 'consumable', 1);
-  insertItem.run('여관 전설의 스튜', '7일간 출석 보상이 2배가 됩니다.', 25000, '🫕', 'consumable', 1);
+  insertItem.run('여관 특제 스튜', '출석 보상이 1.25배가 됩니다. (1회 사용)', 5000, '🍲', 'consumable', 1);
+  insertItem.run('여관 고급 스튜', '출석 보상이 1.5배가 됩니다. (1회 사용)', 12000, '🥘', 'consumable', 1);
+  insertItem.run('여관 전설의 스튜', '출석 보상이 2배가 됩니다. (1회 사용)', 25000, '🫕', 'consumable', 1);
 
   console.log('[Database] 새로운 스튜 아이템 추가 완료');
 }
 
-// 스튜 아이템 배율/가격 업데이트 (기존 데이터 마이그레이션)
-const stew9 = db.prepare('SELECT * FROM shop_items WHERE id = 9').get();
-if (stew9 && stew9.price !== 5000) {
-  db.prepare("UPDATE shop_items SET description = '7일간 출석 보상이 1.25배가 됩니다.', price = 5000 WHERE id = 9").run();
-  db.prepare("UPDATE shop_items SET description = '7일간 출석 보상이 1.5배가 됩니다.', price = 12000 WHERE id = 10").run();
-  db.prepare("UPDATE shop_items SET description = '7일간 출석 보상이 2배가 됩니다.', price = 25000 WHERE id = 11").run();
-  console.log('[Database] 스튜 아이템 배율/가격 업데이트 완료');
+// 스튜 아이템 설명 업데이트 (7일 → 1회 사용)
+const stew9Check = db.prepare('SELECT * FROM shop_items WHERE id = 9').get();
+if (stew9Check && stew9Check.description.includes('7일간')) {
+  db.prepare("UPDATE shop_items SET description = '출석 보상이 1.25배가 됩니다. (1회 사용)', price = 5000 WHERE id = 9").run();
+  db.prepare("UPDATE shop_items SET description = '출석 보상이 1.5배가 됩니다. (1회 사용)', price = 12000 WHERE id = 10").run();
+  db.prepare("UPDATE shop_items SET description = '출석 보상이 2배가 됩니다. (1회 사용)', price = 25000 WHERE id = 11").run();
+  console.log('[Database] 스튜 아이템 설명 업데이트 (1회 사용)');
 }
 
 // 유저 조회 또는 생성
@@ -368,6 +368,24 @@ export const STEW_MULTIPLIERS = {
   10: 1.5,  // 여관 고급 스튜
   11: 2.0   // 여관 전설의 스튜
 };
+
+// 스튜 아이템 ID 배열 (효과가 강한 순서)
+export const STEW_ITEM_IDS = [11, 10, 9];
+
+// 유저 인벤토리에서 가장 강한 스튜 찾기
+export function getBestStewFromInventory(userId) {
+  for (const itemId of STEW_ITEM_IDS) {
+    if (hasItem(userId, itemId)) {
+      const item = getShopItemById(itemId);
+      return {
+        itemId,
+        multiplier: STEW_MULTIPLIERS[itemId],
+        item
+      };
+    }
+  }
+  return null;
+}
 
 // 버프 활성화 (일회성 버프용)
 export function activateBuff(userId, buffType, itemId) {
