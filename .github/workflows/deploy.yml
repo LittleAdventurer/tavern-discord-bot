@@ -23,14 +23,3 @@ jobs:
             -o StrictHostKeyChecking=no \
             "$SSH_USER@$SSH_HOST" \
             'cd ~/tavern-discord-bot && git pull origin main && npm install && pm2 restart discord-bot'
-        uses: appleboy/ssh-action@v1.2.5
-        with:
-          host: ${{ secrets.GCE_HOST }}
-          username: ${{ secrets.GCE_USERNAME }}
-          key: ${{ secrets.GCE_SSH_KEY }}
-          script_stop: true
-          script: |
-            cd ~/tavern-discord-bot
-            git pull origin main
-            npm install
-            pm2 restart discord-bot
