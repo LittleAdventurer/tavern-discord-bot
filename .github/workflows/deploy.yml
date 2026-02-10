@@ -11,6 +11,18 @@ jobs:
 
     steps:
       - name: Deploy to GCE VM
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GCE_SSH_KEY }}
+          SSH_HOST: ${{ secrets.GCE_HOST }}
+          SSH_USER: ${{ secrets.GCE_USERNAME }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh -i ~/.ssh/deploy_key \
+            -o StrictHostKeyChecking=no \
+            "$SSH_USER@$SSH_HOST" \
+            'cd ~/tavern-discord-bot && git pull origin main && npm install && pm2 restart discord-bot'
         uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.GCE_HOST }}
