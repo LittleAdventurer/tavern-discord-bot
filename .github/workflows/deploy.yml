@@ -11,11 +11,12 @@ jobs:
 
     steps:
       - name: Deploy to GCE VM
-        uses: appleboy/ssh-action@v1.0.3
+        uses: appleboy/ssh-action@v1.2.5
         with:
           host: ${{ secrets.GCE_HOST }}
           username: ${{ secrets.GCE_USERNAME }}
           key: ${{ secrets.GCE_SSH_KEY }}
+          script_stop: true
           script: |
             cd ~/tavern-discord-bot
             git pull origin main
