@@ -27,6 +27,7 @@ jobs:
           SSH_USER: ${{ secrets.GCE_USERNAME }}
         run: |
           ssh -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
             -o BatchMode=yes \
             -o ConnectTimeout=30 \
             "$SSH_USER@$SSH_HOST" \
