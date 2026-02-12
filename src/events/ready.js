@@ -1,4 +1,5 @@
 import { Events, ActivityType } from 'discord.js';
+import { checkAndNotifyUpdate } from '../services/updateNotifier.js';
 
 export const name = Events.ClientReady;
 export const once = true;
@@ -28,7 +29,7 @@ function updateStatus(client) {
   currentStatusIndex = (currentStatusIndex + 1) % statusMessages.length;
 }
 
-export function execute(client) {
+export async function execute(client) {
   console.log(`[Bot] ${client.user.tag}으로 로그인되었습니다!`);
   console.log(`[Bot] ${client.guilds.cache.size}개의 서버에서 활동 중`);
 
@@ -38,4 +39,7 @@ export function execute(client) {
 
   // 주기적으로 상태 메시지 변경
   setInterval(() => updateStatus(client), STATUS_INTERVAL);
+
+  // 업데이트 알림 확인 및 전송
+  await checkAndNotifyUpdate(client);
 }
