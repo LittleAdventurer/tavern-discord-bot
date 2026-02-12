@@ -15,7 +15,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.GCE_SSH_KEY }}
           SSH_HOST: ${{ secrets.GCE_HOST }}
         run: |
-          install -m 600 -d ~/.ssh
+          install -m 700 -d ~/.ssh
           printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
