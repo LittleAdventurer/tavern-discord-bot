@@ -26,9 +26,8 @@ jobs:
           echo "=== Deploy key fingerprint ==="
           ssh-keygen -lf ~/.ssh/deploy_key
 
-          ssh -vvv \
-            -i ~/.ssh/deploy_key \
+          ssh -i ~/.ssh/deploy_key \
             -o ConnectTimeout=30 \
             -o IdentitiesOnly=yes \
             "$SSH_USER@$SSH_HOST" \
-            'cd ~/tavern-discord-bot && git pull origin main && npm install && pm2 restart discord-bot'
+            'if [ ! -d ~/tavern-discord-bot ]; then git clone git@github.com:'"$GITHUB_REPOSITORY"'.git ~/tavern-discord-bot; fi && cd ~/tavern-discord-bot && git pull origin main && npm install && pm2 restart discord-bot'
