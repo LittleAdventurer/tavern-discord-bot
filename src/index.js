@@ -3,6 +3,7 @@ import { config } from 'dotenv';
 import { fileURLToPath, pathToFileURL } from 'url';
 import { dirname, join } from 'path';
 import { readdirSync } from 'fs';
+import { startWebServer } from './web/server.js';
 
 config();
 
@@ -58,6 +59,13 @@ async function main() {
   await loadCommands();
   await loadEvents();
   await client.login(process.env.DISCORD_TOKEN);
+
+  // 웹 대시보드 서버 시작
+  if (process.env.CLIENT_SECRET) {
+    await startWebServer(client);
+  } else {
+    console.log('[Web] CLIENT_SECRET이 설정되지 않아 대시보드가 비활성화됩니다.');
+  }
 }
 
 main().catch(console.error);

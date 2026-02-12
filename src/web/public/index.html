@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>꼬마용사 여관 - 대시보드</title>
+  <link rel="stylesheet" href="/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <!-- 헤더 -->
+    <header class="header">
+      <div class="header-content">
+        <h1 class="logo">꼬마용사 여관</h1>
+        <nav class="nav">
+          <a href="#" class="nav-link active" data-section="home">홈</a>
+          <a href="#" class="nav-link" data-section="ranking">랭킹</a>
+          <a href="#" class="nav-link auth-only" data-section="mypage">내 정보</a>
+        </nav>
+        <div class="auth-section">
+          <div id="auth-loading" class="auth-loading">로딩 중...</div>
+          <div id="auth-logged-out" class="auth-logged-out" style="display: none;">
+            <a href="/auth/discord" class="btn btn-discord">
+              <svg class="discord-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+              </svg>
+              Discord로 로그인
+            </a>
+          </div>
+          <div id="auth-logged-in" class="auth-logged-in" style="display: none;">
+            <img id="user-avatar" class="user-avatar" src="" alt="프로필">
+            <span id="user-name" class="user-name"></span>
+            <a href="/auth/logout" class="btn btn-logout">로그아웃</a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- 메인 콘텐츠 -->
+    <main class="main">
+      <!-- 홈 섹션 -->
+      <section id="section-home" class="section">
+        <div class="welcome-banner">
+          <h2>환영합니다, 용사님!</h2>
+          <p>꼬마용사 여관의 대시보드입니다. 이곳에서 여관의 현황을 확인하세요.</p>
+        </div>
+
+        <!-- 봇 상태 -->
+        <div class="card">
+          <h3 class="card-title">봇 상태</h3>
+          <div id="bot-status" class="bot-status">
+            <div class="status-item">
+              <span class="status-label">상태</span>
+              <span id="bot-online" class="status-value status-online">--</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">핑</span>
+              <span id="bot-ping" class="status-value">--ms</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">서버 수</span>
+              <span id="bot-guilds" class="status-value">--</span>
+            </div>
+            <div class="status-item">
+              <span class="status-label">가동 시간</span>
+              <span id="bot-uptime" class="status-value">--</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 전체 통계 -->
+        <div class="card">
+          <h3 class="card-title">여관 통계</h3>
+          <div class="stats-grid">
+            <div class="stat-item">
+              <span class="stat-value" id="stat-users">--</span>
+              <span class="stat-label">총 방문자</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="stat-balance">--</span>
+              <span class="stat-label">총 골드</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="stat-chat">--</span>
+              <span class="stat-label">총 메시지</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="stat-voice">--</span>
+              <span class="stat-label">총 음성시간</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 랭킹 섹션 -->
+      <section id="section-ranking" class="section" style="display: none;">
+        <h2 class="section-title">랭킹</h2>
+
+        <div class="ranking-tabs">
+          <button class="tab-btn active" data-tab="chat">채팅 랭킹</button>
+          <button class="tab-btn" data-tab="voice">음성 랭킹</button>
+        </div>
+
+        <div class="card">
+          <div id="ranking-chat" class="ranking-list">
+            <div class="loading">로딩 중...</div>
+          </div>
+          <div id="ranking-voice" class="ranking-list" style="display: none;">
+            <div class="loading">로딩 중...</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 내 정보 섹션 -->
+      <section id="section-mypage" class="section" style="display: none;">
+        <h2 class="section-title">내 정보</h2>
+
+        <div id="mypage-content">
+          <div class="card profile-card">
+            <div class="profile-header">
+              <img id="my-avatar" class="profile-avatar" src="" alt="프로필">
+              <div class="profile-info">
+                <h3 id="my-name" class="profile-name">--</h3>
+                <p class="profile-id">ID: <span id="my-id">--</span></p>
+              </div>
+            </div>
+            <div class="profile-stats">
+              <div class="profile-stat">
+                <span class="profile-stat-value" id="my-balance">--</span>
+                <span class="profile-stat-label">골드</span>
+              </div>
+              <div class="profile-stat">
+                <span class="profile-stat-value" id="my-chat">--</span>
+                <span class="profile-stat-label">메시지</span>
+              </div>
+              <div class="profile-stat">
+                <span class="profile-stat-value" id="my-voice">--</span>
+                <span class="profile-stat-label">음성시간</span>
+              </div>
+            </div>
+            <div class="profile-daily">
+              <span class="daily-label">마지막 출석:</span>
+              <span id="my-daily" class="daily-value">--</span>
+            </div>
+          </div>
+        </div>
+
+        <div id="mypage-login-required" style="display: none;">
+          <div class="card">
+            <p class="login-message">로그인이 필요합니다.</p>
+            <a href="/auth/discord" class="btn btn-discord btn-large">
+              <svg class="discord-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/>
+              </svg>
+              Discord로 로그인
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- 푸터 -->
+    <footer class="footer">
+      <p>꼬마용사 여관 Discord Bot Dashboard</p>
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
