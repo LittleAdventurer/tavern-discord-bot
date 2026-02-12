@@ -19,6 +19,19 @@ const QUEUE_NAMES = {
   RANKED_FLEX_SR: '자유랭크'
 };
 
+// Queue ID to Korean name mapping (for match history)
+const QUEUE_ID_NAMES = {
+  420: '솔로랭크',
+  440: '자유랭크',
+  450: '칼바람 나락',
+  400: '일반',
+  430: '일반',
+  490: '빠른대전',
+  900: '우르프',
+  1700: '아레나',
+  1900: '우르프',
+};
+
 // Tier name mappings for Korean display
 const TIER_NAMES = {
   IRON: '아이언',
@@ -145,6 +158,89 @@ async function getRankedStats(summonerId, region = 'kr') {
 }
 
 /**
+ * Get recent match IDs by PUUID
+ * @param {string} puuid - Player Universal Unique ID
+ * @param {number} count - Number of matches to retrieve (default: 3)
+ * @param {string} region - Region (default: kr)
+ * @returns {Promise<{success: boolean, data?: string[], error?: string}>} - Array of match IDs or error
+ */
+async function getMatchIds(puuid, count = 3, region = 'kr') {
+  const regionalUrl = REGIONS[region]?.regional || REGIONS.kr.regional;
+  const url = `https://${regionalUrl}/lol/match/v5/matches/by-puuid/${puuid}/ids?start=0&count=${count}`;
+  return await riotApiRequest(url);
+}
+
+/**
+ * Get match details by match ID
+ * @param {string} matchId - Match ID
+ * @param {string} region - Region (default: kr)
+ * @returns {Promise<{success: boolean, data?: object, error?: string}>} - Match data or error
+ */
+async function getMatchDetail(matchId, region = 'kr') {
+  const regionalUrl = REGIONS[region]?.regional || REGIONS.kr.regional;
+  const url = `https://${regionalUrl}/lol/match/v5/matches/${matchId}`;
+  return await riotApiRequest(url);
+}
+
+/**
+ * Get last N match results for a player
+ * @param {string} puuid - Player Universal Unique ID
+ * @param {number} count - Number of matches (default: 3)
+ * @param {string} region - Region (default: kr)
+ * @returns {Promise<{success: boolean, data?: Array, error?: string}>} - Processed match results
+ */
+export async function getRecentMatches(puuid, count = 3, region = 'kr') {
+  const matchIdsResult = await getMatchIds(puuid, count, region);
+  if (!matchIdsResult.success || !matchIdsResult.data?.length) {
+    return { success: false, error: 'NO_MATCHES', message: '최근 게임 기록이 없습니다.' };
+  }
+
+  const matches = [];
+  for (const matchId of matchIdsResult.data) {
+    const matchResult = await getMatchDetail(matchId, region);
+    if (!matchResult.success) continue;
+
+    const match = matchResult.data;
+    const participant = match.info.participants.find(p => p.puuid === puuid);
+    if (!participant) continue;
+
+    const kills = participant.kills;
+    const deaths = participant.deaths;
+    const assists = participant.assists;
+    const kda = deaths === 0 ? 'Perfect' : ((kills + assists) / deaths).toFixed(1);
+
+    matches.push({
+      win: participant.win,
+      championName: participant.championName,
+      kills,
+      deaths,
+      assists,
+      kda,
+      cs: participant.totalMinionsKilled + participant.neutralMinionsKilled,
+      gameDuration: match.info.gameDuration,
+      queueId: match.info.queueId,
+      queueName: QUEUE_ID_NAMES[match.info.queueId] || '기타',
+    });
+  }
+
+  return { success: true, data: matches };
+}
+
+/**
+ * Format a single match result for display
+ * @param {object} match - Processed match data
+ * @returns {string} - Formatted match string
+ */
+export function formatMatchResult(match) {
+  const winIcon = match.win ? '🟦' : '🟥';
+  const winText = match.win ? '승리' : '패배';
+  const kdaStr = `${match.kills}/${match.deaths}/${match.assists} (${match.kda})`;
+  const minutes = Math.floor(match.gameDuration / 60);
+  const seconds = match.gameDuration % 60;
+  return `${winIcon} **${winText}** | ${match.championName} | ${kdaStr} | CS ${match.cs} | ${minutes}:${String(seconds).padStart(2, '0')} | ${match.queueName}`;
+}
+
+/**
  * Get error message based on error type
  * @param {string} error - Error type
  * @param {string} gameName - Game name for context
@@ -229,6 +325,10 @@ export async function getPlayerStats(riotIdInput, region = 'kr') {
     }
   }
 
+  // Step 4: Get recent match history
+  const matchesResult = await getRecentMatches(account.puuid, 3, region);
+  const recentMatches = matchesResult.success ? matchesResult.data : [];
+
   return {
     success: true,
     data: {
@@ -241,7 +341,8 @@ export async function getPlayerStats(riotIdInput, region = 'kr') {
       profileIconUrl: `https://ddragon.leagueoflegends.com/cdn/14.1.1/img/profileicon/${summoner.profileIconId}.png`,
       rankedStats,
       soloRank: rankedStats.RANKED_SOLO_5x5 || null,
-      flexRank: rankedStats.RANKED_FLEX_SR || null
+      flexRank: rankedStats.RANKED_FLEX_SR || null,
+      recentMatches
     }
   };
 }
