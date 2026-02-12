@@ -7,14 +7,24 @@ const router = Router();
 router.get('/discord', passport.authenticate('discord'));
 
 // Discord OAuth2 콜백
-router.get('/discord/callback',
-  passport.authenticate('discord', {
-    failureRedirect: '/?error=login_failed'
-  }),
-  (req, res) => {
-    res.redirect('/');
-  }
-);
+router.get('/discord/callback', (req, res, next) => {
+  passport.authenticate('discord', (err, user, info) => {
+    if (err) {
+      console.error('[Auth] OAuth2 콜백 오류:', err);
+      return res.redirect('/?error=server_error');
+    }
+    if (!user) {
+      return res.redirect('/?error=login_failed');
+    }
+    req.logIn(user, (loginErr) => {
+      if (loginErr) {
+        console.error('[Auth] 세션 저장 오류:', loginErr);
+        return res.redirect('/?error=server_error');
+      }
+      return res.redirect('/');
+    });
+  })(req, res, next);
+});
 
 // 로그아웃
 router.get('/logout', (req, res) => {

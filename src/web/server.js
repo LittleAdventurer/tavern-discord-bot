@@ -36,7 +36,7 @@ export async function createWebServer(discordClient) {
     clientID: process.env.CLIENT_ID,
     clientSecret: process.env.CLIENT_SECRET,
     callbackURL: process.env.DASHBOARD_URL + '/auth/discord/callback',
-    scope: ['identify', 'guilds']
+    scope: ['identify']
   }, (accessToken, refreshToken, profile, done) => {
     return done(null, profile);
   }));
@@ -69,6 +69,12 @@ export async function createWebServer(discordClient) {
   // 메인 페이지
   app.get('/', (req, res) => {
     res.sendFile(join(__dirname, 'public', 'index.html'));
+  });
+
+  // 글로벌 에러 핸들러
+  app.use((err, req, res, next) => {
+    console.error('[Web] 서버 오류:', err);
+    res.status(500).json({ error: '서버 내부 오류가 발생했습니다.' });
   });
 
   return app;
