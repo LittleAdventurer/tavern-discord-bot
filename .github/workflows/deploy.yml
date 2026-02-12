@@ -30,4 +30,4 @@ jobs:
             -o ConnectTimeout=30 \
             -o IdentitiesOnly=yes \
             "$SSH_USER@$SSH_HOST" \
-            'if [ ! -d ~/tavern-discord-bot ]; then git clone https://github.com/'"$GITHUB_REPOSITORY"'.git ~/tavern-discord-bot; fi && cd ~/tavern-discord-bot && git pull origin main && npm install && pm2 restart discord-bot'
+            'if [ ! -d ~/tavern-discord-bot ]; then git clone https://github.com/'"$GITHUB_REPOSITORY"'.git ~/tavern-discord-bot; fi && cd ~/tavern-discord-bot && git pull origin main && npm install && pm2 restart discord-bot 2>/dev/null || pm2 start src/index.js --name discord-bot'
