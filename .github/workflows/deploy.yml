@@ -16,11 +16,19 @@ jobs:
           SSH_HOST: ${{ secrets.GCE_HOST }}
           SSH_USER: ${{ secrets.GCE_USERNAME }}
         run: |
-          mkdir -p ~/.ssh
-          echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
+          install -m 700 -d ~/.ssh
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null || { echo "::error::Invalid SSH private key"; exit 1; }
-          ssh -i ~/.ssh/deploy_key \
-            -o StrictHostKeyChecking=no \
+
+          echo "=== Deploy key fingerprint ==="
+          ssh-keygen -lf ~/.ssh/deploy_key
+
+          ssh -vvv \
+            -i ~/.ssh/deploy_key \
+            -o ConnectTimeout=30 \
+            -o IdentitiesOnly=yes \
             "$SSH_USER@$SSH_HOST" \
             'cd ~/tavern-discord-bot && git pull origin main && npm install && pm2 restart discord-bot'
