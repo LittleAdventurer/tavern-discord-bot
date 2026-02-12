@@ -19,6 +19,7 @@ jobs:
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
+          ssh-keygen -y -f ~/.ssh/deploy_key > /dev/null || { echo "::error::Invalid SSH private key"; exit 1; }
           ssh -i ~/.ssh/deploy_key \
             -o StrictHostKeyChecking=no \
             "$SSH_USER@$SSH_HOST" \
