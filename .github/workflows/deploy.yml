@@ -10,29 +10,18 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Setup SSH key
+      - name: Setup SSH and Deploy
         env:
           SSH_PRIVATE_KEY: ${{ secrets.GCE_SSH_KEY }}
           SSH_HOST: ${{ secrets.GCE_HOST }}
-        run: |
-          install -m 700 -d ~/.ssh
-          printf '%s\n' "$SSH_PRIVATE_KEY" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
-          chmod 644 ~/.ssh/known_hosts
-
-      - name: Deploy to GCE VM
-        env:
-          SSH_HOST: ${{ secrets.GCE_HOST }}
           SSH_USER: ${{ secrets.GCE_USERNAME }}
         run: |
-          ssh -i ~/.ssh/deploy_key \
-            -o IdentitiesOnly=yes \
-            -o BatchMode=yes \
-            -o ConnectTimeout=30 \
+          install -m 700 -d ~/.ssh
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          eval $(ssh-agent -s)
+          printf '%s\n' "$SSH_PRIVATE_KEY" | ssh-add -
+
+          ssh -o ConnectTimeout=30 \
             "$SSH_USER@$SSH_HOST" \
             'cd ~/tavern-discord-bot && git pull origin main && npm install && pm2 restart discord-bot'
-
-      - name: Cleanup
-        if: always()
-        run: rm -rf ~/.ssh/deploy_key
