@@ -22,6 +22,11 @@ jobs:
           eval $(ssh-agent -s)
           printf '%s\n' "$SSH_PRIVATE_KEY" | ssh-add -
 
-          ssh -o ConnectTimeout=30 \
+          echo "=== Offered key types ==="
+          ssh-add -l
+
+          ssh -v \
+            -o ConnectTimeout=30 \
+            -o PubkeyAcceptedAlgorithms=+ssh-rsa \
             "$SSH_USER@$SSH_HOST" \
             'cd ~/tavern-discord-bot && git pull origin main && npm install && pm2 restart discord-bot'
